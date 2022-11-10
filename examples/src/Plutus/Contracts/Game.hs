@@ -37,6 +37,13 @@ module Plutus.Contracts.Game
     , guessTrace
     , lockTrace
     , correctGuessTrace
+    , tlockTrace
+    , tguessTrace
+    , tcorrectGuessTrace
+    , script
+    , gameScript
+    , HashedString
+    , ClearString
     ) where
 
 import           Control.Monad         (void)
@@ -58,6 +65,12 @@ import           PlutusTx.Prelude      hiding (pure, (<$>))
 import qualified Prelude               as Haskell
 import           Plutus.Trace.Emulator (EmulatorTrace)
 import qualified Plutus.Trace.Emulator as Trace
+
+import Codec.Serialise
+import qualified Data.ByteString.Lazy  as LBS
+import qualified Data.ByteString.Short  as SBS
+import qualified Plutus.V1.Ledger.Scripts  as Plutus
+import Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
 
 newtype HashedString = HashedString BuiltinByteString deriving newtype (PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
@@ -85,7 +98,7 @@ gameInstance = Scripts.mkTypedValidator @Game
 -- create a data script for the guessing game by hashing the string
 -- and lifting the hash to its on-chain representation
 hashString :: Haskell.String -> HashedString
-hashString = HashedString . sha2_256 . toBuiltin . C.pack
+hashString = HashedString . sha2_256 . toBuiltin . C.pack 
 
 -- create a redeemer script for the guessing game by lifting the
 -- string to its on-chain representation
@@ -196,3 +209,29 @@ correctGuessTrace = do
   void $ Trace.waitNSlots 1
   Trace.callEndpoint @"guess" h2 (GuessParams secret)
   void $ Trace.waitNSlots 1
+
+
+tlockTrace :: IO ()
+tlockTrace = do
+  let w1 = X.knownWallet 1
+      secret = "secret"
+  Trace.runEmulatorTraceIO (lockTrace w1 secret)
+
+tguessTrace :: IO ()
+tguessTrace = do
+  let w1 = X.knownWallet 1
+      secret = "secret"
+  Trace.runEmulatorTraceIO (guessTrace w1 secret)
+
+tcorrectGuessTrace :: IO ()
+tcorrectGuessTrace = Trace.runEmulatorTraceIO correctGuessTrace
+
+
+script :: Plutus.Script
+script = Plutus.unValidatorScript gameValidator
+
+gameScriptShortBs :: SBS.ShortByteString
+gameScriptShortBs = SBS.toShort . LBS.toStrict $ serialise script
+
+gameScript :: PlutusScript PlutusScriptV1
+gameScript = PlutusScriptSerialised gameScriptShortBs
