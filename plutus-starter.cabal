@@ -43,6 +43,8 @@ library
     exposed-modules:
       MyModule
       Plutus.Contracts.Game
+      Plutus.Contracts.Lotto
+      --Plutus.Contracts.LottoV2
     build-depends:
       base >= 4.9 && < 5,
       aeson -any,
@@ -105,10 +107,10 @@ executable plutus-starter-pab
     openapi3 -any,
 
 
-executable plutus-example
+executable plutus-game
   import:         lang
   hs-source-dirs: app
-  main-is:        plutus-example.hs
+  main-is:        plutus-game.hs
   ghc-options:    -threaded -rtsopts -with-rtsopts=-T
 
   --------------------
@@ -136,3 +138,37 @@ executable plutus-example
     , directory
     , filepath
     , serialise
+
+
+executable plutus-lotto
+  import:         lang
+  hs-source-dirs: app
+  main-is:        plutus-lotto.hs
+  ghc-options:    -threaded -rtsopts -with-rtsopts=-T
+
+  --------------------
+  -- Local components
+  --------------------
+  build-depends:  plutus-starter
+
+  --------------------------
+  -- Other IOG dependencies
+  --------------------------
+  build-depends:  
+      base >= 4.9 && < 5,
+      cardano-api >=1.35,
+      plutus-script-utils,
+      plutus-ledger -any,
+      plutus-ledger-api -any,
+
+
+  ------------------------
+  -- Non-IOG dependencies
+  ------------------------
+  build-depends:
+      aeson -any
+    , bytestring -any
+    , directory
+    , filepath
+    , serialise
+

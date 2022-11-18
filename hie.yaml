@@ -9,4 +9,6 @@ cradle:
     - path: "./pab"
       component: "plutus-starter:exe:plutus-starter-pab"
     - path: "./app"
-      component: "plutus-starter:exe:plutus-example"
+      component: "plutus-starter:exe:plutus-game"
+    - path: "./app"
+      component: "plutus-starter:exe:plutus-lotto"
