@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
@@ -107,11 +108,14 @@ clearString :: Haskell.String -> ClearString
 clearString = ClearString . toBuiltin . C.pack
 
 -- | The validation function (Datum -> Redeemer -> ScriptContext -> Bool)
+{-# INLINABLE validateGuess #-}
 validateGuess :: HashedString -> ClearString -> ScriptContext -> Bool
-validateGuess hs cs _ = isGoodGuess hs cs
+validateGuess hs cs _ = traceIfFalse "Min False hit" $ isGoodGuess hs cs
 
+{-# INLINABLE isGoodGuess #-}
 isGoodGuess :: HashedString -> ClearString -> Bool
-isGoodGuess (HashedString actual) (ClearString guess') = actual == sha2_256 guess'
+isGoodGuess (HashedString actual) (ClearString guess') = False
+--isGoodGuess (HashedString actual) (ClearString guess') = actual == sha2_256 guess'
 
 -- | The validator script of the game.
 gameValidator :: Validator
@@ -151,7 +155,7 @@ guess = endpoint @"guess" @GuessParams $ \(GuessParams theGuess) -> do
     utxos <- fundsAtAddressGeq gameAddress (Ada.lovelaceValueOf 1)
 
     let redeemer = clearString theGuess
-        tx       = collectFromScript utxos redeemer
+        tx       = Constraints.collectFromTheScript utxos redeemer
 
     -- Log a message saying if the secret word was correctly guessed
     let hashedSecretWord = findSecretWordValue utxos
@@ -174,7 +178,7 @@ findSecretWordValue =
 -- | Extract the secret word in the Datum of a given transaction output is possible
 secretWordValue :: ChainIndexTxOut -> Maybe HashedString
 secretWordValue o = do
-  Datum d <- either (const Nothing) Just (_ciTxOutDatum o)
+  Datum d <- snd (_ciTxOutScriptDatum o)
   PlutusTx.fromBuiltinData d
 
 game :: AsContractError e => Contract () GameSchema e ()
@@ -215,7 +219,10 @@ badGuessTrace :: EmulatorTrace ()
 badGuessTrace = do
   let w1 = X.knownWallet 1
       w2 = X.knownWallet 2
-      secret = "F31AFF304C92BABC7F0EA09E322FDB78BAF4CA8A723FABD0EC2288B35C5C5AC2"
+      --secret = "F31AFF304C92BABC7F0EA09E322FDB78BAF4CA8A723FABD0EC2288B35C5C5AC2"
+      secret = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[16,18]}"
+      --secret2 = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[16,18]}"
+      secret2 = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[15,18]}"
 
   h1 <- Trace.activateContractWallet w1 (lock @ContractError)
   void $ Trace.waitNSlots 10
@@ -223,7 +230,7 @@ badGuessTrace = do
 
   h2 <- Trace.activateContractWallet w2 (guess @ContractError)
   void $ Trace.waitNSlots 10
-  Trace.callEndpoint @"guess" h2 (GuessParams secret)
+  Trace.callEndpoint @"guess" h2 (GuessParams secret2)
   void $ Trace.waitNSlots 10
 
 tlockTrace :: IO ()
