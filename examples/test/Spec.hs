@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main(main) where
 
-import qualified Spec.Game
 import           Test.Tasty
 import           Test.Tasty.Hedgehog       (HedgehogTestLimit (..))
 
@@ -17,5 +16,4 @@ limit = HedgehogTestLimit (Just 5)
 
 tests :: TestTree
 tests = localOption limit $ testGroup "use cases" [
-    Spec.Game.tests
     ]

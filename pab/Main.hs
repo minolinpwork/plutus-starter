@@ -65,7 +65,7 @@ writeCostingScripts = do
   let config = ScriptsConfig { scPath = "/tmp/plutus-costing-outputs/", scCommand = cmd }
       cmd    = Scripts { unappliedValidators = FullyAppliedValidators }
       -- Note: Here you can use any trace you wish.
-      trace  = correctGuessTrace
+      trace  = successTrace
   (totalSize, exBudget) <- writeScriptsTo config "game" trace def
   putStrLn $ "Total size = " <> show totalSize
   putStrLn $ "ExBudget = " <> show exBudget
@@ -98,7 +98,7 @@ instance Builtin.HasDefinitions StarterContracts where
     getSchema =  \case
         GameContract -> Builtin.endpointsToSchemas @Game.GameSchema
     getContract = \case
-        GameContract -> SomeBuiltin (Game.game @ContractError)
+        GameContract -> SomeBuiltin (Game.contract @ContractError)
 
 handlers :: SimulatorEffectHandlers (Builtin StarterContracts)
 handlers =

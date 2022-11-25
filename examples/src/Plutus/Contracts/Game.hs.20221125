@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
@@ -20,7 +19,7 @@
 
 
 -- | A guessing game
-module Plutus.Contracts.Lotto
+module Plutus.Contracts.Game
     ( lock
     , guess
     , game
@@ -45,7 +44,6 @@ module Plutus.Contracts.Lotto
     , gameScript
     , HashedString
     , ClearString
-    , tbadGuessTrace
     ) where
 
 import           Control.Monad         (void)
@@ -53,7 +51,6 @@ import qualified Data.ByteString.Char8 as C
 import           Data.Map              (Map)
 import qualified Data.Map              as Map
 import           Data.Maybe            (catMaybes)
-import Data.Text              (Text, unpack)
 import           Ledger                (Address, Datum (Datum), ScriptContext, Validator, Value)
 import qualified Ledger.Ada            as Ada
 import qualified Ledger.Constraints    as Constraints
@@ -109,13 +106,10 @@ clearString :: Haskell.String -> ClearString
 clearString = ClearString . toBuiltin . C.pack
 
 -- | The validation function (Datum -> Redeemer -> ScriptContext -> Bool)
-{-# INLINABLE validateGuess #-}
 validateGuess :: HashedString -> ClearString -> ScriptContext -> Bool
-validateGuess hs cs _ = traceIfFalse "Min False hit" $ isGoodGuess hs cs
+validateGuess hs cs _ = isGoodGuess hs cs
 
-{-# INLINABLE isGoodGuess #-}
 isGoodGuess :: HashedString -> ClearString -> Bool
---isGoodGuess (HashedString actual) (ClearString guess') = False
 isGoodGuess (HashedString actual) (ClearString guess') = actual == sha2_256 guess'
 
 -- | The validator script of the game.
@@ -169,7 +163,7 @@ guess = endpoint @"guess" @GuessParams $ \(GuessParams theGuess) -> do
     -- In a real use-case, we would not submit the transaction if the guess is
     -- wrong.
     logInfo @Haskell.String "Submitting transaction to guess the secret word"
-    handleError (\err -> logInfo $ "Min caught error: " ++ unpack err) $ void (submitTxConstraintsSpending gameInstance utxos tx)
+    void (submitTxConstraintsSpending gameInstance utxos tx)
 
 -- | Find the secret word in the Datum of the UTxOs
 findSecretWordValue :: Map TxOutRef ChainIndexTxOut -> Maybe HashedString
@@ -216,33 +210,6 @@ correctGuessTrace = do
   Trace.callEndpoint @"guess" h2 (GuessParams secret)
   void $ Trace.waitNSlots 1
 
-badGuessTrace :: EmulatorTrace ()
-badGuessTrace = do
-  let w1 = X.knownWallet 1
-      w2 = X.knownWallet 2
-      w3 = X.knownWallet 3
-      --secret = "F31AFF304C92BABC7F0EA09E322FDB78BAF4CA8A723FABD0EC2288B35C5C5AC2"
-      secret = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[16,18]}"
-      --secret2 = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[16,18]}"
-      secret2 = "{\"name\":\"S1\",\"maxNo\":26,\"maxChoices\":2,\"selected\":[16,18]}"
-
-  void $ Trace.waitNSlots 10
-  h1 <- Trace.activateContractWallet w1 (lock @ContractError)
-  void $ Trace.waitNSlots 10
-  Trace.callEndpoint @"lock" h1 (LockParams secret (Ada.adaValueOf 5))
-  void $ Trace.waitNSlots 10
-
-  h2 <- Trace.activateContractWallet w2 (guess @ContractError)
-  void $ Trace.waitNSlots 10
-  Trace.callEndpoint @"guess" h2 (GuessParams secret2)
-  void $ Trace.waitNSlots 10
-
-  h3 <- Trace.activateContractWallet w3 (guess @ContractError)
-  void $ Trace.waitNSlots 10
-  Trace.callEndpoint @"guess" h3 (GuessParams secret2)
-  void $ Trace.waitNSlots 10
-  Trace.callEndpoint @"guess" h3 (GuessParams secret2)
-  void $ Trace.waitNSlots 10
 
 tlockTrace :: IO ()
 tlockTrace = do
@@ -259,8 +226,6 @@ tguessTrace = do
 tcorrectGuessTrace :: IO ()
 tcorrectGuessTrace = Trace.runEmulatorTraceIO correctGuessTrace
 
-tbadGuessTrace :: IO ()
-tbadGuessTrace = Trace.runEmulatorTraceIO badGuessTrace
 
 script :: Plutus.Script
 script = Plutus.unValidatorScript gameValidator

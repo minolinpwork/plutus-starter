@@ -3,10 +3,10 @@ import Prelude
 import Cardano.Api
 import           Cardano.Api.Shelley
 
-import System.Directory
+import System.Directory ( createDirectoryIfMissing )
 import System.FilePath.Posix ((</>))
 
-import Plutus.Contracts.Game (gameScript, LockParams(..), GuessParams(..), hashString, clearString, HashedString, ClearString)
+import Plutus.Contracts.Game (gameScript, LockArgs(..), GuessArgs(..), hashString, clearString, HashedString, ClearString)
 
 import qualified Plutus.V1.Ledger.Api as Plutus
 import qualified Data.ByteString.Short as SBS
@@ -25,8 +25,6 @@ main = do
   let hashedStringPass = hashString "HelloWorld"
       clearStringPass = clearString "HelloWorld"
       clearStringFail = clearString "Failling"
-      lockParams = LockParams "HelloWorld" (Ada.adaValueOf 10)
-      guessParams = GuessParams "HelloWorld"
   LBS.writeFile (v1dir </> "result.datum") $ encode (scriptDataToJson ScriptDataJsonDetailedSchema $ fromPlutusData (Plutus.toData hashedStringPass))
   LBS.writeFile (v1dir </> "result.redeem") $ encode (scriptDataToJson ScriptDataJsonDetailedSchema $ fromPlutusData (Plutus.toData clearStringPass))
   LBS.writeFile (v1dir </> "result.fail.redeem") $ encode (scriptDataToJson ScriptDataJsonDetailedSchema $ fromPlutusData (Plutus.toData clearStringFail))

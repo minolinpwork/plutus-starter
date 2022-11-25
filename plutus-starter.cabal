@@ -48,6 +48,7 @@ library
     build-depends:
       base >= 4.9 && < 5,
       aeson -any,
+      data-default,
       bytestring -any,
       containers -any,
       freer-extras -any,
@@ -64,27 +65,6 @@ library
       cardano-api >=1.35,
       serialise,
     hs-source-dirs: src examples/src
-
-test-suite plutus-example-projects-test
-  import: lang
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  hs-source-dirs: examples/test
-  other-modules:
-    Spec.Game
-  build-depends:
-    plutus-tx -any,
-    plutus-tx-plugin,
-    plutus-contract -any,
-    plutus-pab -any,
-    plutus-ledger -any,
-    plutus-starter -any,
-  build-depends:
-    base >=4.9 && <5,
-    tasty -any,
-    tasty-hunit -any,
-    text -any,
-    tasty-hedgehog >=0.2.0.0
 
 
 executable plutus-starter-pab
@@ -133,7 +113,8 @@ executable plutus-game
   -- Non-IOG dependencies
   ------------------------
   build-depends:
-      aeson -any
+      aeson -any     
+    , data-default
     , bytestring -any
     , directory
     , filepath
