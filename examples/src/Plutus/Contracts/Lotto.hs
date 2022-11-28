@@ -111,7 +111,7 @@ clearString = ClearString . toBuiltin . C.pack
 -- | The validation function (Datum -> Redeemer -> ScriptContext -> Bool)
 {-# INLINABLE validateGuess #-}
 validateGuess :: HashedString -> ClearString -> ScriptContext -> Bool
-validateGuess hs cs _ = traceIfFalse "Min False hit" $ isGoodGuess hs cs
+validateGuess hs cs _ = traceIfFalse "Min Bad Guess" $ isGoodGuess hs cs
 
 {-# INLINABLE isGoodGuess #-}
 isGoodGuess :: HashedString -> ClearString -> Bool

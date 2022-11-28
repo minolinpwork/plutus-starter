@@ -209,7 +209,7 @@ contract = do
 
 
 gameParam :: GameParam
-gameParam = GameParam (mockWalletPaymentPubKeyHash w1) (TimeSlot.scSlotZeroTime def)
+gameParam = GameParam (mockWalletPaymentPubKeyHash w2) (TimeSlot.scSlotZeroTime def)
 
 successTrace :: EmulatorTrace ()
 successTrace = do
